@@ -1,1 +1,366 @@
-<iframe src="https://logic.icelanders.st/embed/mlb-royals" width="100%" height="100%" frameborder="0" scrolling="no" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Video Gallery</title>
+    
+    <!-- Import hls.js for playing .m3u and .m3u8 live streams -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151b2b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #60a5fa;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+        }
+
+        /* ----------------------------------- */
+        /* GALLERY VIEW STYLES                 */
+        /* ----------------------------------- */
+        .gallery-header {
+            text-align: center;
+            padding: 4rem 1rem;
+            background: linear-gradient(to bottom, #0b0f19, transparent);
+        }
+
+        .gallery-header h1 {
+            margin: 0;
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem;
+            padding: 0 2rem 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            display: block;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(96, 165, 250, 0.3);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .thumbnail-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            background-color: #000;
+            overflow: hidden;
+        }
+
+        .card-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover .card-image {
+            transform: scale(1.05);
+        }
+
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            padding-left: 4px;
+            pointer-events: none;
+        }
+
+        .card:hover .play-button {
+            background: var(--accent);
+            border-color: var(--accent-hover);
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .card-content {
+            padding: 1.25rem;
+        }
+
+        .card-content h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text-main);
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* ----------------------------------- */
+        /* SINGLE VIDEO PAGE STYLES            */
+        /* ----------------------------------- */
+        .video-page-header {
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .back-button {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateX(-4px);
+        }
+
+        .content-wrapper {
+            max-width: 1000px;
+            margin: 0 auto 4rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .player-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            background-color: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .player-container iframe, 
+        .player-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            background-color: #000;
+        }
+
+        .video-details {
+            margin-top: 2rem;
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .video-details h1 { 
+            margin: 0; 
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ======================================= -->
+    <!-- GALLERY VIEW                            -->
+    <!-- ======================================= -->
+    <div id="galleryView">
+        <header class="gallery-header">
+            <h1>Discover Videos</h1>
+        </header>
+
+        <main class="video-grid">
+            
+            <!-- CARD 1 -->
+            <div class="card" onclick="openVideo('video1', 'Azteca UNO', 'https://d4.vtoc.live/vdc10012153/KmRr2sJLUpiG2qstcB1FNQ/2c3b0892cbb369421982c768fcfe5e/1784598723/playlist.m3u8
+')">
+                <div class="thumbnail-container">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZjJRv2kHdR60sp_B6xqXrZTr-3lm_hBTb0IUfXZFp0AgOwLA36GBsIY0E&s=10" alt="Thumbnail" class="card-image">
+                    <div class="play-button">▶</div>
+                </div>
+                <div class="card-content">
+                    <h2>Azteca UNO</h2>
+                </div>
+            </div>
+
+            <!-- CARD 2 -->
+            <div class="card" onclick="openVideo('video2', 'Telemundo', 'https://logic.icelanders.st/embed/telemundo-usa')">
+                <div class="thumbnail-container">
+                    <img src="https://ser-national.org/wp-content/uploads/2018/09/fl-fea-telemundo-miami-noon-newscast-20180108-1080x675.jpg" alt="Thumbnail" class="card-image">
+                    <div class="play-button">▶</div>
+                </div>
+                <div class="card-content">
+                    <h2>Telemundo</h2>
+                </div>
+            </div>
+
+            <!-- CARD 3 -->
+            <div class="card" onclick="openVideo('video3', 'TLnovelas', 'http://177.234.249.135:8888/Telenovelas/index.m3u8')">
+                <div class="thumbnail-container">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTcsI451kxrG5LZByrpd1eo1bdpXuD0cD0MZ0Q3V6zWztAnlI1LWburVwgO&s=10" alt="Thumbnail" class="card-image">
+                    <div class="play-button">▶</div>
+                </div>
+                <div class="card-content">
+                    <h2>TLnovelas</h2>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ======================================= -->
+    <!-- SINGLE VIDEO VIEW (Hidden by default)   -->
+    <!-- ======================================= -->
+    <div id="videoView" style="display: none;">
+        <header class="video-page-header">
+            <!-- Calling goBack() hooks into the browser's back button function -->
+            <button class="back-button" onclick="goBack()">← Back to Gallery</button>
+        </header>
+
+        <main class="content-wrapper">
+            <div class="player-container" id="playerWrapper">
+                <!-- Smart Player script will inject the video/iframe here -->
+            </div>
+
+            <div class="video-details">
+                <h1 id="pageTitle">Video Title</h1>
+            </div>
+        </main>
+    </div>
+
+    <!-- ======================================= -->
+    <!-- APPLICATION LOGIC                       -->
+    <!-- ======================================= -->
+    <script>
+        const galleryView = document.getElementById('galleryView');
+        const videoView = document.getElementById('videoView');
+        const playerWrapper = document.getElementById('playerWrapper');
+        const pageTitle = document.getElementById('pageTitle');
+
+        // Function called when a card is clicked
+        function openVideo(id, title, mediaLink) {
+            // Tell the browser to record this as a new "page" in history
+            history.pushState({ id: id, title: title, link: mediaLink }, '', '#' + id);
+            
+            // Build the UI
+            renderVideoPage(title, mediaLink);
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // Handles swapping the layout and building the smart player
+        function renderVideoPage(title, mediaLink) {
+            // Swap visibility
+            galleryView.style.display = 'none';
+            videoView.style.display = 'block';
+            pageTitle.textContent = title;
+
+            // Smart Player Logic
+            if (mediaLink.includes('.m3u') || mediaLink.includes('.m3u8')) {
+                playerWrapper.innerHTML = '<video controls></video>';
+                const video = playerWrapper.querySelector('video');
+                
+                if (Hls.isSupported()) {
+                    const hls = new Hls();
+                    hls.loadSource(mediaLink);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        video.play();
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = mediaLink;
+                    video.addEventListener('loadedmetadata', function() {
+                        video.play();
+                    });
+                }
+            } else {
+                playerWrapper.innerHTML = `<iframe src="${mediaLink}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            }
+        }
+
+        // On-screen back button
+        function goBack() {
+            history.back(); // Mimics the browser back button
+        }
+
+        // Resets UI to the gallery
+        function showGallery() {
+            galleryView.style.display = 'block';
+            videoView.style.display = 'none';
+            // Empty the player wrapper to stop the audio from playing in the background!
+            playerWrapper.innerHTML = '';
+        }
+
+        // Listen for the Browser's Back & Forward buttons
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.link) {
+                // If the history state has a video, render it
+                renderVideoPage(event.state.title, event.state.link);
+            } else {
+                // If there is no state (we are at the root), show the gallery
+                showGallery();
+            }
+        });
+
+        // Ensure gallery is shown on fresh loads
+        window.addEventListener('load', function() {
+            history.replaceState(null, '', window.location.pathname);
+            showGallery();
+        });
+    </script>
+
+</body>
+</html>
